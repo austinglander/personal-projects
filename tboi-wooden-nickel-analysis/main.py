@@ -3,9 +3,10 @@
 # I would love to use the actual game's RNG to discover seeds with similar or even greater luck, but that may be a bit above my paygrade
 # For now, I will just do random trials
 
-import matplotlib.pyplot as plt
 import numpy as np
-
+import seaborn as sns
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def wooden_nickel(n: int = 1) -> int:
     """ 
@@ -15,28 +16,31 @@ def wooden_nickel(n: int = 1) -> int:
     """
     return sum(np.random.choice([0, 1, 5, 10], p=[0.41, 0.52, 0.06, 0.01], size=n))
 
-
-# function to add value labels - https://www.geeksforgeeks.org/adding-value-labels-on-a-matplotlib-bar-chart/
-def addlabels(x,y):
-    for i in range(len(x)):
-        plt.text(i,y[i],y[i])
-
 # Run our simulations and collect the data
-total_simulations = int(input("How many simulations to run?: "))
-results_dict = {
-    '0': 0,
-    '1': 0,
-    '5': 0,
-    '10': 0
-}
-for i in range(total_simulations):
-    results_dict[str(wooden_nickel())] += 1
+total_simulations = 10000000
+magic_number = 36
+data = [wooden_nickel(5) for i in tqdm(range(total_simulations))]
+# We will do the expensive sort operation now to save time with getting things like the max of the data
+sorted_data = np.sort(np.array(data))
+
+# Do some basic statistical analysis with numpy
+mean = np.mean(sorted_data)
+std_dev = np.std(sorted_data)
+print(f"Number of simulations: {total_simulations}")
+print(f"Mean: {mean:.3f}")
+print(f"Standard Deviation: {std_dev:.3f}")
+print(f"Maximum: {sorted_data[-1]}" )
+num_geq_magic_number = 0
+for i in reversed(sorted_data): 
+    if i >= magic_number:
+        num_geq_magic_number += 1
+    else:
+        break
+print(f"Exact number of simulations that tied or beat {magic_number} cents: {num_geq_magic_number}")
+print(f"Empirical probability of tying or beating {magic_number} cents: {num_geq_magic_number / total_simulations * 100}%")
 
 # Setup our plot
-x_vals = ['0', '1', '5', '10']
-y_vals = [val / total_simulations for val in results_dict.values()]
-plt.xlabel("Wooden Nickel Results")
-plt.ylabel(f"Proportion of {total_simulations} simulations")
-plt.bar(x_vals, y_vals)
-addlabels(x_vals, y_vals)
+sns.set_style('whitegrid')
+sns.kdeplot(np.array(data), bw_method=0.2)
+plt.title(f"Cents from 5 wooden nickel uses ({total_simulations:,} simulations)")
 plt.show()
